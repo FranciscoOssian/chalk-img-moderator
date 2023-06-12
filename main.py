@@ -7,7 +7,6 @@ from imageConvert import imageConvert
 app = Flask(__name__)
 
 img_dim = 299
-
 model = predict.load_model(f"./model/nsfw.{img_dim}x{img_dim}.h5")
 
 @app.route('/predict', methods=['GET'])
