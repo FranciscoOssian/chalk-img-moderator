@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify
 import os
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+
 from nsfw_detector import predict
 
 from imageConvert import imageConvert
@@ -21,6 +24,3 @@ def predict_image():
     os.remove(img_path)
 
     return jsonify(prediction[img_path])
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
