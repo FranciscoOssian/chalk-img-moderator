@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 import os
 from utils import try_add_to_proxy, validate_request
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from nsfw_detector import predict
 

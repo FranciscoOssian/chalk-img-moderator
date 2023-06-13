@@ -1,5 +1,9 @@
 import re
 import requests
+import os
+import hashlib
+import random
+import string
 
 def try_add_to_proxy():
     try:
@@ -19,6 +23,16 @@ def try_add_to_proxy():
 def validate_request(request):
     if not request.is_json:
         return {'error': 'Request body must be a JSON object'}, 400
-    if 'url' not in request.json or not isinstance(request.json['url'], str):
-        return {'error': 'The "url" field is required in the request body and it must be a string'}, 400
+    
+    if 'key' not in request.json:
+        return {'error': f'The "key" field is required in the request body'}, 400
+    
+    server_key = os.environ.get('PYTHON_SERVER_KEY')
+    
+    if server_key is None or request.json['key'] != server_key:
+        return {'error': f'The "key" field is wrong in the request body'}, 400
+    
+    if not isinstance(request.json['url'], str):
+        return {'error': 'The "url" field must be a string'}, 400
+
     return None
