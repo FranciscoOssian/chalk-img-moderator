@@ -1,16 +1,5 @@
 #!/bin/bash
 
-# Check if running with sh, re-execute with bash
-if [ "$(ps -p $$ -ocomm=)" = "sh" ]; then
-  echo "Re-running with bash..."
-  exec bash "$0" "$@"
-fi
-
-# Default values
-bind_address="0.0.0.0"
-port=8000
-key="${PYTHON_SERVER_KEY:-}"
-
 print_usage() {
     echo "Usage: bash start.sh [OPTIONS]"
     echo "Options:"
@@ -44,14 +33,13 @@ while getopts "b:p:k:" opt; do
 done
 
 # Check if bind address was provided, if not, ask the user
-if [ "$bind_address" == "0.0.0.0" ]; then
+if [ -z "$bind_address" ]; then
     echo "Please select the bind option:"
     echo "1. Localhost (bind to 127.0.0.1)"
     echo "2. All interfaces (bind to 0.0.0.0)"
-
     read -p "Enter the number corresponding to your choice: " choice
     if [ "$choice" == "1" ]; then
-        bind_address="localhost"
+        bind_address="127.0.0.1"
     elif [ "$choice" == "2" ]; then
         bind_address="0.0.0.0"
     else
@@ -68,26 +56,30 @@ fi
 
 # Check if key was provided or already exists in the environment, if not, ask the user
 if [ -z "$key" ]; then
-    read -p "Please enter the key (press Enter for default): " key
-    key="${key:-defaultKey}"  # Set default key as "defaultKey" if user presses Enter
-else
-    echo "PYTHON_SERVER_KEY already configured."
+    if [ -z "$PYTHON_SERVER_KEY" ]; then
+        read -p "Please enter the key (press Enter for default): " key
+        key="${key:-defaultKey}"  # Set default key as "defaultKey" if user presses Enter
+    else
+        key="$PYTHON_SERVER_KEY"
+    fi
 fi
+
+# Set the PYTHON_SERVER_KEY environment variable
+export PYTHON_SERVER_KEY="$key"
 
 # Get the PID of the running process on the specified port and terminate it
-pid=$(lsof -i :$port | awk 'NR>1 {print $2}')
+pid=$(lsof -t -i:$port)
 if [ -n "$pid" ]; then
     echo "Terminating the running process on port $port (PID: $pid)..."
-    kill $pid
-    wait $pid  # Wait for the process to finish
+    kill -9 $pid
 fi
 
-# Set the PYTHON_SERVER_KEY environment variable if necessary
-if [ -z "$PYTHON_SERVER_KEY" ]; then
-    export PYTHON_SERVER_KEY="$key"
+# Check the current directory, if it ends with /system_scripts then move to the parent directory
+current_dir=$(pwd)
+if [[ $current_dir == *"system_scripts" ]]; then
+    cd ..
 fi
 
 # Start the Gunicorn server
 echo "Starting the Gunicorn server with bind on $bind_address:$port..."
-cd ..
 gunicorn main:app --bind $bind_address:$port
