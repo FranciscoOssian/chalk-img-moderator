@@ -36,3 +36,20 @@ def validate_request(request):
         return {'error': 'The "url" field must be a string'}, 400
 
     return None
+
+def validate_image_request(request):
+    server_key = os.environ.get('PYTHON_SERVER_KEY')
+    if 'key' not in request.form or request.form['key'] != server_key:
+        return {'error': f'The "key" field is wrong in the request body'}, 400
+    
+    if 'file' not in request.files:
+        return {'error': 'No file part in the request'}, 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return {'error': 'No selected file'}, 400
+
+    if not file or not file.filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        return {'error': 'File format not supported'}, 400
+
+    return None
